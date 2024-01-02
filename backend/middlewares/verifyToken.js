@@ -39,7 +39,23 @@ function verifyTokenAndAdmin(req, res, next){
     });
 }
 
+// ============================
+
+function verifyTokenAndOnlyUser(req, res, next){
+  verifyToken(req, res, ()=>{
+      if(req.user.id === req.params.id){
+      next();
+      }
+      else{
+      // 403 --> Forbidden
+      return res.status(403).json({message: "Not Allowed, Only User Himself"})
+      }
+
+  });
+}
+
 module.exports = {
     verifyToken,
-    verifyTokenAndAdmin
+    verifyTokenAndAdmin,
+    verifyTokenAndOnlyUser
 }
