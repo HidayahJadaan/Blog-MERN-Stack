@@ -30,7 +30,7 @@ const PostsSchema = new mongoose.Schema({
        
     },
     image: {
-        type: Joi.object,
+        type: Object,
         default: {
             url: "",
             publicId: null
