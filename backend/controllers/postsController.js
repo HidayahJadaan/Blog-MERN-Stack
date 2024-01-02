@@ -259,17 +259,54 @@ module.exports.updatePostImageCtrl = asyncHandler(async (req, res) => {
     {
       $set: {
         image: {
-            url: result.secure_url,
-            publicId: result.public_id,
+          url: result.secure_url,
+          publicId: result.public_id,
         },
       },
     },
     { new: true }
-  ).populate("user", ["-password"]);
+  );
 
   // 7. Send Response
   res.status(200).json(updatedPost);
 
   //   8. Remove Image from The Server
   fs.unlinkSync(imagePath);
+});
+
+/**--------------------------
+* @desc  Toggle Like
+* @route /api/posts/like/:id
+* @method PUT
+* @access private(only logged in user)
+-----------------------------*/
+module.exports.toggleLikeCtrl = asyncHandler(async (req, res) => {
+  const loggedInUser = req.user.id;
+  const { id: postId } = req.params;
+  let post = await Post.findById(postId);
+
+  if (!post) {
+    return res.status(404).json({ message: "Post Not Found" });
+  }
+  const isPostAlreadyLikes = post.likes.find(
+    (user) => user.toString() === loggedInUser);
+
+    if(isPostAlreadyLikes){
+        // pull --> Remvoe From The Array
+        post = await Post.findByIdAndUpdate(postId,{
+            $pull:{
+                likes: loggedInUser
+            }
+        }, {new: true});
+    }
+    else{
+        // push --> Add To The Array
+        post = await Post.findByIdAndUpdate(postId,{
+            $push:{
+                likes: loggedInUser
+            }
+        }, {new: true});
+    }
+
+    res.status(200).json(post);
 });
