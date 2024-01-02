@@ -1,6 +1,13 @@
 const asyncHandler = require("express-async-handler");
 const { User, ValidateUpdateUser } = require("../models/User");
 const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
+
+const {
+  cloudinaryUploadImage,
+  cloudinaryRemoveImage,
+} = require("../utils/cloudinary");
 
 /**--------------------------
 * @desc Get All Users Profile
@@ -88,14 +95,11 @@ module.exports.updateUserProfileCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.getUsersCountCtrl = asyncHandler(async (req, res) => {
-    const usersCount = await User.countDocuments();
+  const usersCount = await User.countDocuments();
 
-    res.status(200).json(usersCount)
-  });
-  
+  res.status(200).json(usersCount);
+});
 
-
-  
 /**--------------------------
 * @desc Profile photo Upload
 * @route /api/users/profile/profile-photo-upload
@@ -104,7 +108,44 @@ module.exports.getUsersCountCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.profilePhotoUploadCtrl = asyncHandler(async (req, res) => {
- 
-  res.status(200).json({message: "Your Profile Photo Uploaded Success"})
+  //  MULTER WAY
+  // 1. Validation
+  if (!req.file) {
+    return res.status(400).json({ message: "No File Provided" });
+  }
 
+  // 2. Get The Path To The Image
+  const imagePath = path.join(__dirname, `../images/${req.file.filename}`);
+
+  // 3. Upload To Cloudinary
+  const result = await cloudinaryUploadImage(imagePath);
+  // console.log(result); --> secure_url + puublic_id
+ 
+  // 4. Get The User From DB
+  const user = await User.findById(req.user.id);
+  
+  // 5. Delete Old Profile Photo If Exists
+  if (user.profilePhoto.publicId !== null) {
+    await cloudinaryRemoveImage(user.profilePhoto.publicId);
+  }
+  // 6. Change Profile Photo Feild In The DB
+
+  user.profilePhoto = {
+    url: result.secure_url,
+    publicId: result.public_id,
+  };
+  await user.save();
+
+  
+  // 7. Send Response To Client
+  res
+    .status(200)
+    .json({
+      message: "Your Profile Photo Uploaded Success",
+      profilePhoto: { url: result.secure_url, publicId: result.public_Id },
+    });
+
+  // 8. Remove Image From The Images Folder (fs)
+
+  fs.unlinkSync(imagePath);
 });
