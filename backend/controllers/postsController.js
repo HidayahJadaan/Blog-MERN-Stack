@@ -6,7 +6,7 @@ const {
   ValidateCreatePost,
   ValidateUpdatePost,
 } = require("../models/Post");
-const { cloudinaryUploadImage } = require("../utils/cloudinary");
+const { cloudinaryUploadImage, cloudinaryRemoveImage } = require("../utils/cloudinary");
 
 /**--------------------------
 * @desc Create New Post
@@ -141,4 +141,34 @@ module.exports.getPostCountCtrl = asyncHandler(async (req, res) => {
 
     res.status(200).json(postCount)
   });
+
+
+  /**--------------------------
+* @desc Delete Post
+* @route /api/posts/:id
+* @method DELETE
+* @access private(only admin or owner of the post)
+-----------------------------*/
+
+module.exports.deletePostCtrl = asyncHandler(async (req, res) => {
+   
+    const post = await Post.findById(req.params.id);
+
+    if(!post){
+        return res.status(404).json({message: " Post Not Found"});
+    }
+if(req.user.isAdmin || req.user.id === post.user.toString()){
+await Post.findByIdAndDelete(req.params.id);
+await cloudinaryRemoveImage(post.image.publicId);
+
+// DELETE COMMENTS
+
+res.status(200).json({message: "Post Has Been Deleted Successfully", postId: post._id});
+}
+else{
+    res.status(403).json({message: "Access Denied", postId: post._id});
+}
+
+  });
+  
   
