@@ -6,7 +6,10 @@ const {
   ValidateCreatePost,
   ValidateUpdatePost,
 } = require("../models/Post");
-const { cloudinaryUploadImage, cloudinaryRemoveImage } = require("../utils/cloudinary");
+const {
+  cloudinaryUploadImage,
+  cloudinaryRemoveImage,
+} = require("../utils/cloudinary");
 
 /**--------------------------
 * @desc Create New Post
@@ -106,8 +109,6 @@ module.exports.getAllPostsCtrl = asyncHandler(async (req, res) => {
   res.status(200).json(posts);
 });
 
-
-
 /**--------------------------
 * @desc Get Single Post
 * @route /api/posts/:id
@@ -116,18 +117,17 @@ module.exports.getAllPostsCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.getSinglePostsCtrl = asyncHandler(async (req, res) => {
-   
-    const post = await Post.findById(req.params.id).populate("user", ["-password"]);
+  const post = await Post.findById(req.params.id).populate("user", [
+    "-password",
+  ]);
 
+  if (!post) {
+    return res.status(404).json({ message: "No post found" });
+  }
 
-    if(!post){
-        return res.status(404).json({message : "No post found"})
-    }
+  res.status(200).json(post);
+});
 
-    res.status(200).json(post)
-  });
-  
-  
 /**--------------------------
 * @desc Get Post Count
 * @route /api/posts/:id
@@ -136,14 +136,12 @@ module.exports.getSinglePostsCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.getPostCountCtrl = asyncHandler(async (req, res) => {
-   
-    const postCount = await Post.countDocuments();
+  const postCount = await Post.countDocuments();
 
-    res.status(200).json(postCount)
-  });
+  res.status(200).json(postCount);
+});
 
-
-  /**--------------------------
+/**--------------------------
 * @desc Delete Post
 * @route /api/posts/:id
 * @method DELETE
@@ -151,24 +149,127 @@ module.exports.getPostCountCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.deletePostCtrl = asyncHandler(async (req, res) => {
-   
-    const post = await Post.findById(req.params.id);
+  const post = await Post.findById(req.params.id);
 
-    if(!post){
-        return res.status(404).json({message: " Post Not Found"});
-    }
-if(req.user.isAdmin || req.user.id === post.user.toString()){
-await Post.findByIdAndDelete(req.params.id);
-await cloudinaryRemoveImage(post.image.publicId);
+  if (!post) {
+    return res.status(404).json({ message: " Post Not Found" });
+  }
+  if (req.user.isAdmin || req.user.id === post.user.toString()) {
+    await Post.findByIdAndDelete(req.params.id);
+    await cloudinaryRemoveImage(post.image.publicId);
 
-// DELETE COMMENTS
+    // DELETE COMMENTS
 
-res.status(200).json({message: "Post Has Been Deleted Successfully", postId: post._id});
-}
-else{
-    res.status(403).json({message: "Access Denied", postId: post._id});
-}
+    res.status(200).json({
+      message: "Post Has Been Deleted Successfully",
+      postId: post._id,
+    });
+  } else {
+    res.status(403).json({ message: "Access Denied", postId: post._id });
+  }
+});
 
-  });
-  
-  
+/**--------------------------
+* @desc  Update Post
+* @route /api/posts/:id
+* @method PUT
+* @access private(only owner of the post)
+-----------------------------*/
+
+module.exports.updatePostCtrl = asyncHandler(async (req, res) => {
+  // 1. Validation
+  const { error } = ValidateUpdatePost(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  // 2. Check if the post exists in DB
+
+  const post = await Post.findById(req.params.id);
+
+  if (!post) {
+    return res.status(404).json({ message: "Post Not Found" });
+  }
+  //  3. Check if the post is for this user(authorization)
+
+  if (req.user.id !== post.user.toString()) {
+    return res
+      .status(403)
+      .json({ message: "Access Denied, You Are Not Alllowed!!" });
+  }
+
+  // 4. Update The Post
+  const updatedPost = await Post.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: {
+        title: req.body.title,
+        description: req.body.description,
+        category: req.body.category,
+      },
+    },
+    { new: true }
+  ).populate("user", ["-password"]);
+
+  // 5. Send Response
+
+  res.status(200).json(updatedPost);
+});
+
+/**--------------------------
+* @desc  Update Post Image
+* @route /api/posts/upload-image/:id
+* @method PUT
+* @access private(only owner of the post)
+-----------------------------*/
+
+module.exports.updatePostImageCtrl = asyncHandler(async (req, res) => {
+  // 1. Validation
+
+  if (!req.file) {
+    return res.status(400).json({ message: "No Image Provided" });
+  }
+
+  // 2. Check if the post exists in DB
+
+  const post = await Post.findById(req.params.id);
+
+  if (!post) {
+    return res.status(404).json({ message: "Post Not Found" });
+  }
+  //  3. Check if the post is for this user(authorization)
+
+  if (req.user.id !== post.user.toString()) {
+    return res
+      .status(403)
+      .json({ message: "Access Denied, You Are Not Alllowed!!" });
+  }
+
+  // 4. Delete Old Image
+  await cloudinaryRemoveImage(post.image.publicId);
+
+  // 5. Upload New Image
+  const imagePath = path.join(__dirname, `../images/${req.file.filename}`);
+  const result = await cloudinaryUploadImage(imagePath);
+
+  // 6. Update The Post Image Feild In The DB
+  const updatedPost = await Post.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: {
+        image: {
+            url: result.secure_url,
+            publicId: result.public_id,
+        },
+      },
+    },
+    { new: true }
+  ).populate("user", ["-password"]);
+
+  // 7. Send Response
+  res.status(200).json(updatedPost);
+
+  //   8. Remove Image from The Server
+  fs.unlinkSync(imagePath);
+});
