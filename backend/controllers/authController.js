@@ -13,6 +13,12 @@ const {
 * @access public
 -----------------------------*/
 module.exports.registerUserContoller = asyncHandler(async (req, res) => {
+  // 1. Validatation
+  // 2. Is User already registered
+  //  3. Hash The Password
+  //  4. New User & save it to DB
+  //  5. Send a response to the client
+
   // Validation
   const { error } = ValidateRegisterUser(req.body);
   if (error) {
@@ -37,6 +43,8 @@ module.exports.registerUserContoller = asyncHandler(async (req, res) => {
   await user.save();
   // Send a response to the client
 
+  // TODO:--> Sending Email (Verify Account If Not Verified)
+
   res.status(201).json({ message: "Registerd Successfully..." });
 });
 
@@ -60,33 +68,31 @@ module.exports.loginUserController = asyncHandler(async (req, res) => {
   }
 
   // STEP 2
-  const user = await User.findOne({email: req.body.email});
-  if(!user) {
-    return res.status(400).json({ message:"INVALID EMAIL OR PASSWORD!!"});
-
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return res.status(400).json({ message: "INVALID EMAIL OR PASSWORD!!" });
   }
 
   // STEP 3
-const isPasswordMatch = await bcrypt.compare(req.body.password, user.password);
+  const isPasswordMatch = await bcrypt.compare(
+    req.body.password,
+    user.password
+  );
 
-if(!isPasswordMatch) {
-  return res.status(400).json({ message:"INVALID EMAIL OR PASSWORD!!"});
+  if (!isPasswordMatch) {
+    return res.status(400).json({ message: "INVALID EMAIL OR PASSWORD!!" });
+  }
 
-}
+  // STEP 4
+  // TODO:--> Sending Email (Verify Account If Not Verified)
 
+  const token = user.generateAuthToken();
 
-// STEP 4
-
-const token = user.generateAuthToken();
-
-// STEP 5
-res.status(200).json({
-  _id: user._id,
-  isAdmin: user.isAdmin,
-  profilePhoto: user.profilePhoto,
-  token,
-})
-
-
-
+  // STEP 5
+  res.status(200).json({
+    _id: user._id,
+    isAdmin: user.isAdmin,
+    profilePhoto: user.profilePhoto,
+    token,
+  });
 });
