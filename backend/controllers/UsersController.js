@@ -25,7 +25,7 @@ module.exports.getAllUsersCtrl = asyncHandler(async (req, res) => {
   //     return res.status(403).json({message: "Not Allowed, Only Admin"})
   // }
 
-  const users = await User.find().select("-password");
+  const users = await User.find().select("-password").populate('posts');
   res.status(200).json(users);
 });
 
@@ -37,7 +37,7 @@ module.exports.getAllUsersCtrl = asyncHandler(async (req, res) => {
 -----------------------------*/
 
 module.exports.getUserProfileCtrl = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).select("-password");
+  const user = await User.findById(req.params.id).select("-password").populate('posts');
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });

@@ -47,7 +47,7 @@ const PostsSchema = new mongoose.Schema({
 });
 
 // POST MODEL
-const Post = mongoose.model("Post", PostsSchema);
+const Post = mongoose.model("POST", PostsSchema);
 
 // Validate Create Post
 function ValidateCreatePost(Obj) {
