@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv').config();
 const connectionToDB = require('./config/connectToDB');
+const { errorHandler, notFound } = require('./middlewares/error');
 
 // Connect to the database
 connectionToDB();
@@ -19,8 +20,12 @@ app.use("/api/comments", require('./routes/CommentsRoute'));
 app.use("/api/categories", require('./routes/categoriesRoute'));
 
 
-// Running The Server
 
+// SHould Be After The Routes
+app.use(notFound) // SHould be before ERROR HANDLER
+app.use(errorHandler)
+
+// Running The Server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT,()=>{
     console.log('Starting server on port '+PORT);

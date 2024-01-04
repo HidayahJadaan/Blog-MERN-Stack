@@ -28,7 +28,7 @@ const photoUpload = multer({
       cb({ message: "UnSupported File Format" }, false);
     }
   },
-  limits: {fileSize: 1024 * 1024 * 1024 * 3} // 1 * 3 MB
+  limits: {fileSize: 1024 * 1024 * 2} // 1 * 2 MB
 });
 
 module.exports = photoUpload;
