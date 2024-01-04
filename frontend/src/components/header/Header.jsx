@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import './header.css'
 
+import { Link } from "react-router-dom";
+
 export default function Header() {
     const [toggleMenu, setToggleMenu] = useState(false)
   
@@ -19,31 +21,31 @@ export default function Header() {
       </div>
       <nav style={{ clipPath: toggleMenu && "polygon(0 0, 100% 0, 100% 100%, 0 100%)" }} className="navbar">
         <ul className="nav-links">
-          <li  onClick={()=>setToggleMenu(false)} className="nav-link">
+          <Link  to="/"  onClick={()=>setToggleMenu(false)} className="nav-link">
             <i className="bi bi-house">Home</i>
-          </li>
-          <li onClick={()=>setToggleMenu(false)} className="nav-link">
+          </Link>
+          <Link to="/posts" onClick={()=>setToggleMenu(false)} className="nav-link">
             <i className="bi bi-stickies">Posts</i>
-          </li>
-          <li onClick={()=>setToggleMenu(false)} className="nav-link">
+          </Link>
+          <Link to="/posts/create-post" onClick={()=>setToggleMenu(false)} className="nav-link">
             <i className="bi bi-journal">Create</i>
-          </li>
+          </Link>
 
-          <li onClick={()=>setToggleMenu(false)} className="nav-link">
+          <Link to='admin-dashboard' onClick={()=>setToggleMenu(false)} className="nav-link">
             <i className="bi bi-person-check">Admin Dashboard</i>
-          </li>
+          </Link>
         </ul>
       </nav>
 
       <div className="header-right">
-        <button className="header-right-link">
+        <Link to="/login" className="header-right-link">
           <i className="bi bi-box-arrow-in-right"></i>
           <span>Login</span>
-        </button>
-        <button className="header-right-link">
+        </Link>
+        <Link to="/register" className="header-right-link">
           <i className="bi bi-person-plus"></i>
           <span>Register</span>
-        </button>
+        </Link>
       </div>
     </header>
   );
