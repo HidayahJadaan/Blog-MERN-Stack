@@ -11,6 +11,7 @@ const {
   cloudinaryRemoveImage,
 } = require("../utils/cloudinary");
 
+const {Comment} = require('../models/Comment')
 /**--------------------------
 * @desc Create New Post
 * @route /api/posts
@@ -159,6 +160,12 @@ module.exports.deletePostCtrl = asyncHandler(async (req, res) => {
     await cloudinaryRemoveImage(post.image.publicId);
 
     // DELETE COMMENTS
+
+    await Comment.deleteMany({
+      postId: post._id,
+
+    });
+    
 
     res.status(200).json({
       message: "Post Has Been Deleted Successfully",

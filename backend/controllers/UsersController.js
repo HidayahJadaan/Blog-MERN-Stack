@@ -7,8 +7,11 @@ const fs = require("fs");
 const {
   cloudinaryUploadImage,
   cloudinaryRemoveImage,
+  cloudinaryRemoveAllImages
 } = require("../utils/cloudinary");
 
+const {Post} = require('../models/Post')
+const {Comment} = require('../models/Comment')
 /**--------------------------
 * @desc Get All Users Profile
 * @route /api/users/profile
@@ -159,9 +162,12 @@ module.exports.profilePhotoUploadCtrl = asyncHandler(async (req, res) => {
 
 module.exports.deleteUserProfileCtrl = asyncHandler( async (req, res )=>{
 // 1. Get The User From The DB
+
 // 2. Get All Posts From The DB
 // 3. Get The PublicId's From The Posts
 // 4. Delete All Posts Images From Cloudinary that belongs to this user
+
+
 // 5. Delete The Profile Picture From The Cloudinary
 // 6. Delete User Posts & Comments
 // 7. Delete The User Himself
@@ -176,10 +182,25 @@ if(!user){
 
 }
 
-// STEP 5:
+// STEP 2:
+const posts = await Post.find({user : user._id}); // posts for current user
+
+
+// STEP 3:
+const AllpublicIds = posts?.map((post)=> post.image.publicId);
+
+// STEP 4:
+if(AllpublicIds?.length > 0){
+  await cloudinaryRemoveAllImages(AllpublicIds);
+}
+
+// STEP 5:.
 await cloudinaryRemoveImage(user.profilePhoto.publicId);
 
 // STEP 6:
+
+await Post.deleteMany({ user: user._id});
+await Comment.deleteMany({ user: user._id});
 
 // STEP 7:
 await User.findByIdAndDelete(req.params.id);
