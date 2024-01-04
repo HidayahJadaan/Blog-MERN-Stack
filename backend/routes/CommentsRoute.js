@@ -1,4 +1,4 @@
-const { createCommentCtrl, getAllCommentsCtrl, deleteCommentCtrl } = require('../controllers/CommentsController');
+const { createCommentCtrl, getAllCommentsCtrl, deleteCommentCtrl, updateCommentCtrl } = require('../controllers/CommentsController');
 const { verifyToken, verifyTokenAndAdmin } = require('../middlewares/verifyToken');
 const validateObjectID = require('../middlewares/validateObjectID');
 const router = require('express').Router();
@@ -10,7 +10,11 @@ router.route("/")
 .get(verifyTokenAndAdmin, getAllCommentsCtrl)
 
 //  api/comments/:id
-router.route("/:id").delete(validateObjectID, 
-    verifyToken, deleteCommentCtrl);
+router.route("/:id")
+.delete(validateObjectID, 
+    verifyToken,
+     deleteCommentCtrl)
+     .put(validateObjectID, verifyToken,
+        updateCommentCtrl)
 
 module.exports = router;
